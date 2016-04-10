@@ -27,14 +27,24 @@ class shielding_scene:
         
 def get_ray_mesh_intersections(rock_mesh, ray_source):
     #It seems the the first argument of ray_cast must be inside the object, i.e. the rays have to go outwards.
-    intersections = []
+    intersections = [origin,]
     hit, intersection_pt, face_normal, face_ind = rock_mesh.ray_cast(origin, ray_source)
     intersections.append(intersection_pt)
+    #After each intersection, move a tiny bit along the same vector and call ray_cast() again
     epsilon = ray_source * 1e-6
     while hit:
+        intersections.append(intersection_pt)
         ray_target = intersection_pt + epsilon
         hit, intersection_pt, face_normal, face_ind = rock_mesh.ray_cast(ray_target, ray_source)
-        intersections.append(intersection_pt)
     return intersections
+
+def get_lengths_from_intersections(intersections):
+    lengths=[]
+    for ray in intersections:
+        evens = [origin] + ray[1::2]
+        odds = ray[::2]
+        rock_segment_lengths = [(seg[0]-seg[1]).length for seg in zip(evens, odds)]
+        lengths.append(sum(rock_segment_lengths))
+    return lengths
     
 pbrs = shielding_scene(filepath = r"D:\aaron\sfm\parmelee_cosmogenic\shielding\src\gv01_everything_cntrd.stl")
