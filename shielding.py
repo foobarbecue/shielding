@@ -28,6 +28,9 @@ class Sample:
         self.shielding_factor = self.shielding_factor / (2*pi/(m+1)) # normalize by maximum full-sky flux
         print(self.empty.location)
         print(self.shielding_factor)
+    def plot_ray_intersections(self):
+        for ind, ray in enumerate(self.ray_intersections):
+            plot_line(ray, name='{} Inters'.format(ind))
     def plot_rays(self):
         for ind, ray_source in enumerate(self.ray_xyzs):
             ray = (Vector(s0.empty.location), Vector(ray_source))
