@@ -21,7 +21,7 @@ class Sample:
         pal_w_rho = particle_attenuation_length / density / 100
         self.shielding_factor = pi**2*mean(((cos(self.phis))**m)*sin(self.phis)*exp(-self.in_rock_lengths/pal_w_rho))
         self.shielding_factor = self.shielding_factor / (2*pi/(m+1)) # normalize by maximum full-sky flux
-        print('Shielding factor for sample at {:.3f},{:.3f},{:.3f} is {:.3f}.'.format(*self.empty.location, self.shielding_factor))
+        print('Shielding factor for sample at {:.3f}, {:.3f}, {:.3f} is {:.3f}.'.format(*self.empty.location, self.shielding_factor))
     def plot_ray_intersections(self):
         for ind, ray in enumerate(self.ray_intersections):
             plot_line(ray, name='{} Inters'.format(ind))
@@ -30,7 +30,7 @@ class Sample:
             ray = (Vector(s0.empty.location), Vector(ray_source))
             plot_line(points=ray, name='Ray {}'.format(ind))
 
-class Shielding_scene:
+class ShieldingScene:
     def __init__(self, mesh_filepath, samples_filepath):
         bpy.ops.import_mesh.stl(filepath = mesh_filepath)
         self.mesh = bpy.context.object
@@ -56,7 +56,6 @@ class Shielding_scene:
         sample.ray_xyzs = convert_spherical_to_xyz(sample.thetas, sample.phis, r)
         sample.ray_xyzs = array(sample.ray_xyzs).transpose()
         for ray_source in sample.ray_xyzs:
-#            bpy.ops.object.empty_add(type='PLAIN_AXES',location=Vector(ray_source))
             sample.ray_intersections.append(get_ray_mesh_intersections(self.mesh, Vector(ray_source), sample.empty.location))
 
 def get_ray_mesh_intersections(rock_mesh, ray_source, sample_loc):
@@ -101,8 +100,3 @@ def plot_line(points, name=None):
             #Polylines have a fourth value, the "weight". Using to_4D() sets weight to 1.0.
             point = point.to_4d()
         polyline.points[ind].co = point
-    
-
-#def get_shielding_factor_from_lengths(lengths):
-pbrs = Shielding_scene(mesh_filepath = r"D:\aaron\sfm\parmelee_cosmogenic\shielding\src\gv01_everything.stl",
-    samples_filepath = r"D:\aaron\sfm\parmelee_cosmogenic\shielding\src\gv2_samples.csv")
