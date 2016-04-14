@@ -1,8 +1,3 @@
-#import sys
-#sys.path.append(r"C:\Users\aaron2\.p2\pool\plugins\org.python.pydev_4.5.5.201603221110\pysrc")
-#import pydevd
-#pydevd.settrace(stdoutToServer=True, stderrToServer=True, suspend=False)
-import code
 import csv
 import bpy
 from mathutils.bvhtree import BVHTree  
@@ -16,18 +11,17 @@ class Sample:
     Stores all information about a particlar sample measurement.
     This includes information about the simulation rays used to calculate shielding factor.
     """
-    def __init__(self, location, n_rays=10):
+    def __init__(self, location, n_rays=1000):
         bpy.ops.object.empty_add(type='PLAIN_AXES', location=location)
         self.empty = bpy.context.object
         self.n_rays = n_rays
         self.ray_intersections = []
         self.in_rock_lengths = zeros(n_rays)
-    def calculate_shielding_factor(self, particle_attenuation_length=2.2, m=2.2):
-        print('avg len: {}'.format(mean(self.in_rock_lengths)))
-        self.shielding_factor = pi**2*mean(((cos(self.phis))**m)*sin(self.phis)*exp(-self.in_rock_lengths/particle_attenuation_length))
+    def calculate_shielding_factor(self, particle_attenuation_length=208, m=2.2, density=2.65):
+        pal_w_rho = particle_attenuation_length / density / 100
+        self.shielding_factor = pi**2*mean(((cos(self.phis))**m)*sin(self.phis)*exp(-self.in_rock_lengths/pal_w_rho))
         self.shielding_factor = self.shielding_factor / (2*pi/(m+1)) # normalize by maximum full-sky flux
-        print(self.empty.location)
-        print(self.shielding_factor)
+        print('Shielding factor for sample at {:.3f},{:.3f},{:.3f} is {:.3f}.'.format(*self.empty.location, self.shielding_factor))
     def plot_ray_intersections(self):
         for ind, ray in enumerate(self.ray_intersections):
             plot_line(ray, name='{} Inters'.format(ind))
@@ -51,8 +45,7 @@ class Shielding_scene:
         for sample in self.samples:
             self.intersect_cosrays(sample=sample)
             sample.in_rock_lengths = get_lengths_from_intersections(sample.ray_intersections)
-            sample.calculate_shielding_factor(particle_attenuation_length=2.2, m=2.2)
-#        code.interact(local=locals())
+            sample.calculate_shielding_factor(particle_attenuation_length=208, m=2.2)
     def intersect_cosrays(self, sample):
         # random phis & thetas
         # phi is zenith angle, AKA elevation and goes from 0 to pi/2
@@ -61,7 +54,7 @@ class Shielding_scene:
         sample.thetas = [random.uniform(0,2*pi) for _ in range(sample.n_rays)]
         r = max(self.mesh.dimensions)*2 # Make ray source distances twice the longest mesh dimension
         sample.ray_xyzs = convert_spherical_to_xyz(sample.thetas, sample.phis, r)
-        sample.ray_xyzs = array(sample.ray_xyzs).transpose()+sample.empty.location
+        sample.ray_xyzs = array(sample.ray_xyzs).transpose()
         for ray_source in sample.ray_xyzs:
 #            bpy.ops.object.empty_add(type='PLAIN_AXES',location=Vector(ray_source))
             sample.ray_intersections.append(get_ray_mesh_intersections(self.mesh, Vector(ray_source), sample.empty.location))
