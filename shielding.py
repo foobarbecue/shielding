@@ -8,7 +8,7 @@ import bpy
 from mathutils.bvhtree import BVHTree  
 from mathutils import Vector
 import random
-from numpy import array, pi, zeros, mean, exp, cos, sin #Use numpy functions for element-wise trig
+from numpy import array, concatenate, pi, zeros, mean, exp, cos, sin #Use numpy functions for element-wise trig
 origin = Vector((0,0,0))
 
 class Sample:
@@ -16,7 +16,7 @@ class Sample:
     Stores all information about a particlar sample measurement.
     This includes information about the simulation rays used to calculate shielding factor.
     """
-    def __init__(self, location, n_rays=1000):
+    def __init__(self, location, n_rays=10):
         bpy.ops.object.empty_add(type='PLAIN_AXES', location=location)
         self.empty = bpy.context.object
         self.n_rays = n_rays
@@ -28,6 +28,10 @@ class Sample:
         self.shielding_factor = self.shielding_factor / (2*pi/(m+1)) # normalize by maximum full-sky flux
         print(self.empty.location)
         print(self.shielding_factor)
+    def plot_rays(self):
+        for ind, ray_source in enumerate(self.ray_xyzs):
+            ray = (Vector(s0.empty.location), Vector(ray_source))
+            plot_line(points=ray, name='Ray {}'.format(ind))
 
 class Shielding_scene:
     def __init__(self, mesh_filepath, samples_filepath):
@@ -53,9 +57,9 @@ class Shielding_scene:
         # theta is azimuth and goes from 0 to 2*pi
         sample.thetas = [random.uniform(0,2*pi) for _ in range(sample.n_rays)]
         r = max(self.mesh.dimensions)*2 # Make ray source distances twice the longest mesh dimension
-        xyzs = convert_spherical_to_xyz(sample.thetas, sample.phis, r)
-        ray_sources = array(xyzs).transpose()+sample.empty.location
-        for ray_source in ray_sources:
+        sample.ray_xyzs = convert_spherical_to_xyz(sample.thetas, sample.phis, r)
+        sample.ray_xyzs = array(sample.ray_xyzs).transpose()+sample.empty.location
+        for ray_source in sample.ray_xyzs:
 #            bpy.ops.object.empty_add(type='PLAIN_AXES',location=Vector(ray_source))
             sample.ray_intersections.append(get_ray_mesh_intersections(self.mesh, Vector(ray_source), sample.empty.location))
 
@@ -81,12 +85,27 @@ def get_lengths_from_intersections(rays):
     return lengths
 
 def convert_spherical_to_xyz(az, el, r, ):
+    # Note: To make consistent with Greg Balco's generate_cosmic_rays.m, do
+    # el = pi/2-el . He does that in line 113. I guess he is anti-clock.
     """ From https://github.com/numpy/numpy/issues/5228 """
     rcos_theta = r * cos(el)
     x = rcos_theta * cos(az)
     y = rcos_theta * sin(az)
     z = r * sin(el)
     return x, y, z
+
+def plot_line(points, name=None):
+    curvedata = bpy.data.curves.new(name=name, type='CURVE')
+    curveobj = bpy.data.objects.new(name= name, object_data = curvedata)
+    bpy.context.scene.objects.link(curveobj)
+    polyline = curvedata.splines.new(type='POLY')
+    polyline.points.add(len(points)-1) #The polyline initializes with 1 point already
+    for ind, point in enumerate(points):
+        if len(point) == 3:
+            #Polylines have a fourth value, the "weight". Using to_4D() sets weight to 1.0.
+            point = point.to_4d()
+        polyline.points[ind].co = point
+    
 
 #def get_shielding_factor_from_lengths(lengths):
 pbrs = Shielding_scene(mesh_filepath = r"D:\aaron\sfm\parmelee_cosmogenic\shielding\src\gv01_everything.stl",
