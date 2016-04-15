@@ -82,6 +82,7 @@ def get_lengths_from_intersections(rays):
 def convert_spherical_to_xyz(az, el, r, ):
     # Note: To make consistent with Greg Balco's generate_cosmic_rays.m, do
     # el = pi/2-el . He does that in line 113. I guess he is anti-clock.
+    el = pi/2-el # To make consistent with Greg Balco's generate_cosmic_rays.m . I guess he is anti-clock.
     """ From https://github.com/numpy/numpy/issues/5228 """
     rcos_theta = r * cos(el)
     x = rcos_theta * cos(az)
