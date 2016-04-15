@@ -31,7 +31,7 @@ class Sample:
             plot_line(points=ray, name='Ray {}'.format(ind))
 
 class ShieldingScene:
-    def __init__(self, mesh_filepath, samples_filepath):
+    def __init__(self, mesh_filepath, samples_filepath, n_rays=1000):
         bpy.ops.import_mesh.stl(filepath = mesh_filepath)
         self.mesh = bpy.context.object
         #BVH tree is a technique for speeding up the ray - mesh intersection calculations
@@ -40,7 +40,7 @@ class ShieldingScene:
         with open(samples_filepath) as samplesfile:
             rdr = csv.reader(samplesfile, quoting=csv.QUOTE_NONNUMERIC)
             for line in rdr:
-                new_sample = Sample(location=Vector(line))
+                new_sample = Sample(location=Vector(line), n_rays=n_rays)
                 self.samples.append(new_sample)
         for sample in self.samples:
             self.intersect_cosrays(sample=sample)
